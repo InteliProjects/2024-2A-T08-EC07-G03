@@ -1,0 +1,193 @@
+---
+title: Modelos
+sidebar_position: 1
+description : Modelos desenvolvidos na sprint 2
+---
+
+# Introdução
+
+A seguir vamos descrever estruturamos os modelos para detectar se o carro vai ter falha na etapa de rodagem ou não. 
+
+# Etapas de preparação dos dados
+
+Antes de montar os modelos, realizamos a preparação dos dados. Todas essas etapas foram realizadas no arquivo `notebooks/sprint2/combinedTimes.ipynb` e  `notebooks/sprint2/transformData.ipynb` que se encontra na pasta `notebooks` do repositório e documentado em `docs/docs/Sprints/Sprint 2/Modelos/tratamentoDados.md`. Como resutado final, temos um dataset pronto para ser utilizado nos modelos. Além disso, o notebook com a criação do modelo se encontra na pasta `notebooks` no arquivo `ModelosRNN.ipynb`.
+
+Segue a estrutura do dataset:
+
+| Campo                | Descrição                                                                 |
+|----------------------|---------------------------------------------------------------------------|
+| `KNR`                | Identificação única do carro no dataset                                   |
+| `Nvezes1`            | Número de vezes que o carro passou pela etapa 1                           |
+| `Nvezes2`            | Número de vezes que o carro passou pela etapa 2                           |
+| `Nvezes718`          | Número de vezes que o carro passou pela etapa 718                         |
+| `SomaTempo1`         | Tempo total gasto na etapa 1                                              |
+| `SomaTempo2`         | Tempo total gasto na etapa 2                                              |
+| `SomaTempo718`       | Tempo total gasto na etapa 718                                            |
+| `Intervalo_SomaTempo1` | Intervalo de tempo da etapa 1                                            |
+| `Intervalo_SomaTempo2` | Intervalo de tempo da etapa 2                                            |
+| `Intervalo_SomaTempo718` | Intervalo de tempo da etapa 718                                        |
+| `TemFalhaRod`        | Indicador de falha na etapa de rodagem (0 para não, 1 para sim)           |
+
+# Implementação dos Modelos
+
+### Modelo 1: LSTM
+
+#### Pré-processamento dos Dados
+
+Os dados foram normalizados para garantir que todas as variáveis tivessem uma escala comparável. Valores ausentes foram preenchidos utilizando a média das colunas correspondentes.
+
+#### Estrutura do Modelo
+
+O modelo LSTM foi escolhido devido à sua capacidade de capturar dependências temporais nos dados sequenciais. A estrutura do modelo é a seguinte:
+
+```python
+model = Sequential()
+model.add(LSTM(units=50, return_sequences=True, input_shape=(X_train.shape[1], X_train.shape[2])))
+model.add(Dropout(0.2))
+model.add(LSTM(units=50, return_sequences=False))
+model.add(Dropout(0.2))
+model.add(Dense(units=1, activation='sigmoid'))
+```
+
+- **50 unidades LSTM:** Escolhido para balancear a complexidade do modelo com a capacidade de capturar padrões temporais.
+- **Dropout de 20%:** Aplicado para evitar overfitting durante o treinamento.
+
+#### Treinamento do Modelo
+
+O modelo foi treinado utilizando a função de perda Binary Crossentropy e o otimizador Adam. O treinamento foi realizado com 100 épocas e um batch size de 32.
+
+### Modelo 2: GRU
+
+#### Justificativa da Estrutura
+
+A Gated Recurrent Unit (GRU) foi escolhida como uma alternativa ao LSTM por ser uma arquitetura de rede mais simples e menos computacionalmente intensiva, mas ainda capaz de capturar dependências temporais de maneira eficaz. O GRU combina as características de uma RNN padrão com um controle mais eficiente sobre o fluxo de informações.
+
+#### Pré-processamento dos Dados
+
+Os dados para o modelo GRU foram tratados da mesma forma que para o LSTM, garantindo consistência entre os modelos.
+
+#### Estrutura do Modelo
+
+O modelo GRU foi estruturado da seguinte forma:
+
+```python
+model = Sequential()
+model.add(GRU(units=50, return_sequences=True, input_shape=(X_train.shape[1], X_train.shape[2])))
+model.add(Dropout(0.2))
+model.add(GRU(units=50, return_sequences=False))
+model.add(Dropout(0.2))
+model.add(Dense(units=1, activation='sigmoid'))
+```
+
+- **50 unidades GRU:** Mantém a consistência com o modelo LSTM, mas com menos parâmetros, permitindo treinamento mais rápido.
+- **Dropout de 20%:** Aplicado para prevenir overfitting.
+
+#### Treinamento do Modelo
+
+O treinamento do modelo GRU seguiu o mesmo processo utilizado no modelo LSTM, utilizando a função de perda Binary Crossentropy e o otimizador Adam.
+
+### Modelo 3: K-means (Não Supervisionado)
+
+#### Justificativa da Estrutura
+
+O K-means foi escolhido como um modelo não supervisionado para explorar a estrutura dos dados sem a necessidade de rótulos. A ideia é identificar agrupamentos naturais nos dados que possam correlacionar com falhas na etapa de rodagem, oferecendo uma perspectiva diferente dos modelos supervisionados.
+
+#### Pré-processamento dos Dados
+
+Para o modelo K-means, os dados foram padronizados (standardized) para garantir que todas as variáveis tivessem média zero e desvio padrão um, essencial para a eficácia dos algoritmos de clustering.
+
+#### Estrutura do Modelo
+
+O modelo K-means foi configurado para identificar dois clusters, representando veículos com e sem falhas na etapa de rodagem:
+
+```python
+kmeans = KMeans(n_clusters=2, random_state=42)
+df_final['Cluster'] = kmeans.fit_predict(X)
+```
+
+- **2 Clusters:** Definido para identificar separadamente os veículos que apresentam e não apresentam falhas.
+
+#### Avaliação do Modelo
+
+A avaliação do modelo K-means foi feita verificando a correspondência dos clusters gerados com as labels reais de falha (`TemFalhaRod`). O modelo foi capaz de identificar padrões, embora não seja tão preciso quanto os modelos supervisionados.
+
+## 5. Resultados e Análise
+
+### Explicação das Métricas
+
+#### 1. Acurácia (Accuracy)
+A acurácia é a proporção de previsões corretas em relação ao total de previsões feitas pelo modelo.
+
+#### 2. Precision (Precisão)
+A precisão é a proporção de verdadeiros positivos em relação ao total de previsões positivas feitas pelo modelo. É calculada como:
+
+#### 3. Recall
+O recall é a proporção de verdadeiros positivos em relação ao total de exemplos positivos reais.
+
+#### 4. F1-Score
+O F1-Score é a média harmônica entre precisão e recall. Ele é útil quando há um desbalanceamento entre precisão e recall.
+
+#### 5. Matriz de Confusão (Confusion Matrix)
+A matriz de confusão é uma tabela que permite visualizar o desempenho de um algoritmo de classificação. Ela mostra os verdadeiros positivos, falsos positivos, verdadeiros negativos e falsos negativos.
+
+#### 6. Adjusted Rand Index (ARI)
+O ARI mede a similaridade entre duas atribuições de clustering, ajustando para a possibilidade de acertos aleatórios. Ele é usado para comparar o resultado do clustering com a verdade de solo (ground truth).
+
+#### 7. Homogeneity Score
+A homogeneidade mede se todos os pontos em um cluster pertencem à mesma classe verdadeira.
+
+
+### Avaliação dos Modelos
+
+- **LSTM:**
+  - **Acurácia:** 0.95
+  - **Precision:** 1.00
+  - **Recall:** 0.00
+  - **F1-Score:** 0.01
+- **Matriz de Confusão:**
+
+|                        | Predito Negativo | Predito Positivo |
+|------------------------|------------------|------------------|
+| **Verdadeiro Negativo** | 8978             | 0                |
+| **Verdadeiro Positivo** | 462              | 2                |
+  
+- **GRU:**
+  - **Acurácia:** 0.95
+  - **Precision:** 1.00
+  - **Recall:** 0.00
+  - **F1-Score:** 0.01
+- **Matriz de Confusão:**
+
+|                | Predito Negativo | Predito Positivo |
+|----------------|------------------|------------------|
+| **Verdadeiro Negativo** | 8978             | 0                |
+| **Verdadeiro Positivo** | 462              | 2                |
+
+- **K-means:**
+  - **Precision:** 0.10
+  - **Recall:** 0.06
+  - **F1-Score:** 0.07
+  - **Adjusted Rand Index (ARI):** 0.03
+  - **Homogeneity Score:** 0.00
+- **Matriz de Confusão:**
+
+|                        | Predito Negativo | Predito Positivo |
+|------------------------|------------------|------------------|
+| **Verdadeiro Negativo** | 43489            | 1223             |
+| **Verdadeiro Positivo** | 2355             | 139              |
+
+### Análise dos Resultados
+
+Os modelos LSTM e GRU apresentaram uma acurácia alta (0.95), mas as métricas de precisão e recall indicam que ambos os modelos tiveram dificuldade em identificar corretamente as falhas na etapa de rodagem. A precisão foi perfeita (1.00), mas o recall de 0.00 e o F1-Score de 0.01 sugerem que os modelos quase não identificaram falsos positivos, indicando um possível problema de desequilíbrio de classes.
+
+O modelo K-means, por outro lado, demonstrou uma performance significativamente inferior, com uma precisão de 0.10, recall de 0.06, e F1-Score de 0.07. O Adjusted Rand Index (ARI) de 0.03 e o Homogeneity Score de 0.00 indicam que o modelo não supervisionado teve dificuldades em identificar padrões significativos nos dados.
+
+No geral, embora os modelos supervisionados LSTM e GRU tenham mostrado bons resultados em termos de acurácia, suas capacidades de detecção de falhas foram limitadas.
+
+## 6. Próximos Passos
+
+Para melhorar a performance dos modelos, os próximos passos incluem:
+
+1. **Balanceamento de Classes:** Utilizar algumas técnicas para balancear o número de carros com e sem falhas na etapa de rodagem.
+2. **Feature Engineering:** Explorar novas variáveis para criar novas features para dar mais informações aos modelos.
+3. **Tuning de Hiperparâmetros:** Realizar uma busca de hiperparâmetros para otimizar a performance dos modelos.

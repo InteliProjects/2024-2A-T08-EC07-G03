@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:80"
+    volumes:
+      - ./backend:/code
+    depends_on:
+      - frontend
+    networks:
+      - app-network
+      
+  frontend:
+    build:
+      context: ./app-typescript
+      dockerfile: Dockerfile
+    ports:
+      - "7000:82"
+    volumes:
+      - ./app-typescript:/app
+    networks:
+      - app-network
+      
+  health:
+    build:
+      context: ./healthCheck
+      dockerfile: Dockerfile
+    ports:
+      - "8009:8009"
+    volumes:
+      - ./healthCheck:/code2
+    networks:
+      - app-network
+      
+  datalake:  # Serviço do MongoDB
+    build:
+      context: ./datalake
+      dockerfile: Dockerfile
+    ports:
+      - "27017:27017"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

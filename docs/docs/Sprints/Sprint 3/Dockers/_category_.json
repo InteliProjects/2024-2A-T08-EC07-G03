@@ -1,0 +1,8 @@
+{
+    "label": "Dockerização do sistema",
+    "position": 2,
+    "link": {
+        "type": "generated-index",
+        "description": "Vamos explicar como dockerizamos o sistema."
+    }
+}

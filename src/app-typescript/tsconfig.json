@@ -1,0 +1,21 @@
+
+
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "strict": true,
+    "jsx": "preserve",
+    "moduleResolution": "node",
+    "esModuleInterop": true, // Permite interoperabilidade melhor com módulos do ECMAScript
+    "skipLibCheck": true, // Ignora a verificação de tipos em definições de biblioteca de terceiros
+    "forceConsistentCasingInFileNames": true, // Garante consistência de case nos nomes dos arquivos
+    "allowJs": false
+  },
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

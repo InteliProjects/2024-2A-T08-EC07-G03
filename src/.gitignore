@@ -1,0 +1,5 @@
+__pycache__
+venv
+~$dados.xlsx
+.DS_Store
+modelo.joblib

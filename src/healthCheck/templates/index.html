@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Status Page</title>
+    <!-- Inclua o Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Inclua o Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <!-- Seu CSS personalizado -->
+    <link href="{{ url_for('static', path='styles.css') }}" rel="stylesheet">
+</head>
+<body>
+    <main id="main-container">
+        <div class="hero-static bg-white">
+            <div class="content content-full">
+                <div class="px-3 py-5">
+                    <div class="mb-5 text-center">
+                        <a class="link-fx font-w700 font-size-h1 display-4" href="#">
+                            <span class="text-dark">Käfer</span><span class="text-primary"></span>
+                        </a>
+                        <p class="text-uppercase font-w700 font-size-sm text-muted">Status Page</p>
+                    </div>
+                    <div class="row no-gutters d-flex justify-content-center">
+                        <div class="col-md-6 col-xl-4">
+                            <div class="d-flex justify-content-between">
+                                <a class="btn btn-outline-secondary btn-hero-sm btn-hero-success" href="javascript:void(0)">
+                                    <i class="fa fa-rss"></i> <span class="d-none d-sm-inline-block ml-1">Subscribe</span>
+                                </a>
+                            </div>
+                            <hr>
+                            <div id="status-alerts">
+                                <!-- Os alertas dos serviços vão aqui-->
+                            </div>
+                            <ul class="list-group push" id="status-list">
+                                <!-- Status dos serviços vao ser colocados aqui pela função -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Inclua o jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- Inclua o Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Seu JavaScript personalizado -->
+    <script>
+        function fetchStatuses() {
+            $.ajax({
+                url: '/healthcheck_services',
+                method: 'GET',
+                success: function(data) {
+                    updateStatusList(data);
+                    updateAlerts(data);
+                },
+                error: function() {
+                    console.error('Erro ao obter os status');
+                }
+            });
+        }
+
+        function updateStatusList(statuses) {
+            let statusList = $('#status-list');
+            statusList.empty(); // Limpa a lista
+
+            const componentNames = {
+                frontend: 'Frontend',
+                backend: 'Backend',
+                database: 'Database (Supabase)',
+                datalake: 'Datalake'
+            };
+
+            for (let component of ['frontend', 'backend', 'database', 'datalake']) {
+                let status = statuses[component];
+                let badgeClass = '';
+                let statusText = '';
+
+                if (status === true) {
+                    badgeClass = 'badge-success';
+                    statusText = 'Operational';
+                } else {
+                    badgeClass = 'badge-danger';
+                    statusText = 'Down';
+                }
+
+                let displayName = componentNames[component];
+
+                let listItem = `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        ${displayName}
+                        <span class="badge badge-pill ${badgeClass}">${statusText}</span>
+                    </li>
+                `;
+
+                statusList.append(listItem);
+            }
+        }
+
+        function updateAlerts(statuses) {
+            let alertsContainer = $('#status-alerts');
+            alertsContainer.empty(); // Limpa os alertas
+
+            const componentNames = {
+                frontend: 'Frontend',
+                backend: 'Backend',
+                database: 'Database (Supabase)',
+                datalake: 'Datalake'
+            };
+
+            // Verifica se há componentes com problemas
+            for (let component in statuses) {
+                let status = statuses[component];
+                if (status === false) {
+                    let displayName = componentNames[component];
+                    let alertItem = `
+                        <div class="alert alert-danger d-flex align-items-center justify-content-between" role="alert">
+                            <div class="flex-fill mr-3">
+                                <p class="mb-0">${displayName} is experiencing issues.</p>
+                            </div>
+                            <div class="flex-00-auto">
+                                <i class="fa fa-fw fa-2x fa-bug"></i>
+                            </div>
+                        </div>
+                    `;
+
+                    alertsContainer.append(alertItem);
+                }
+            }
+        }
+
+        // Chama a função ao carregar a página
+        $(document).ready(function() {
+            fetchStatuses(); // Chama uma vez imediatamente
+            setInterval(fetchStatuses, 5000); // Atualiza a cada 5 segundos
+        });
+    </script>
+</body>
+</html>
